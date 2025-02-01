@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxy Registration</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: url('https://drive.google.com/uc?export=view&id=166YcejuHurKKJLXee5FxEyn7JZl_rlwY') fixed;
+            background-size: cover;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .monica-character {
+            width: 350px;
+            height: 500px;
+            background: url('https://drive.google.com/uc?export=view&id=164MpGAf7DoHmJlK8xIV57-AubPElv4eX') no-repeat center;
+            background-size: contain;
+            filter: drop-shadow(0 0 15px #00ffff);
+        }
+
+        .registration-box {
+            position: relative;
+            z-index: 3;
+            width: 400px;
+            margin: 150px auto 0;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid #00ffff;
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00ffff;
+            border-radius: 5px;
+            color: #fff;
+        }
+
+        button {
+            background: #00ffff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 12px;
+            display: none;
+        }
+
+        .google-btn {
+            background: #4285F4;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Karakter Monica -->
+    <div class="monica-container">
+        <div class="monica-character"></div>
+    </div>
+
+    <!-- Form Registrasi -->
+    <div class="registration-box">
+        <form id="registerForm">
+            <input type="text" id="fullName" placeholder="Nama Lengkap" required><br>
+            <input type="date" id="birthDate" required><br>
+            <input type="email" id="email" placeholder="Gmail" required><br>
+            <input type="password" id="password" placeholder="Kata Sandi" required><br>
+            <div class="error-message" id="passwordError"></div>
+            <button type="submit">Segera Berangkat!</button>
+        </form>
+        <button class="google-btn" id="googleLogin">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo">
+            Daftar dengan Google
+        </button>
+    </div>
+
+    <!-- Audio -->
+    <audio id="bgMusic" loop>
+        <source src="https://drive.google.com/uc?export=view&id=1646Form9ENrCdFmJ3J74HwU8UWi2J-jV" type="audio/mpeg">
+    </audio>
+
+    <button onclick="document.getElementById('bgMusic').play()" style="position: fixed; bottom: 20px; right: 20px; padding: 10px;">
+        🔊 Putar Musik
+    </button>
+
+    <script type="module">
+        // Import Firebase Modular SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Konfigurasi Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEe5SH-tk6_6Z8BR3tVbkfaao3olmnzqc",
+            authDomain: "universe-pinic.firebaseapp.com",
+            projectId: "universe-pinic",
+            storageBucket: "universe-pinic.appspot.com",
+            messagingSenderId: "592515883376",
+            appId: "1:592515883376:web:a9ffd3e7f2d1f379512fb5",
+            measurementId: "G-NY64HEGMQZ"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Validasi Sandi (Minimal 8 Karakter)
+        const passwordInput = document.getElementById('password');
+        const passwordError = document.getElementById('passwordError');
+
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            const isValid = /^.{8,}$/.test(password); // Minimal 8 karakter
+
+            if (!isValid) {
+                passwordError.textContent = 'Kata sandi harus minimal 8 karakter!';
+                passwordError.style.display = 'block';
+            } else {
+                passwordError.style.display = 'none';
+            }
+        });
+
+        // Kirim Data ke Firestore (Manual Form)
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                nama: document.getElementById('fullName').value,
+                tanggalLahir: document.getElementById('birthDate').value,
+                email: document.getElementById('email').value,
+                sandi: document.getElementById('password').value
+            };
+            try {
+                await addDoc(collection(db, 'pendaftar'), data);
+                alert('Data terkirim!');
+            } catch (error) {
+                alert('Gagal mengirim data: ' + error.message);
+            }
+        });
+
+        // Login dengan Google
+        document.getElementById('googleLogin').addEventListener('click', async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const data = {
+                    nama: user.displayName,
+                    email: user.email,
+                    foto: user.photoURL,
+                    provider: "Google"
+                };
+                await addDoc(collection(db, 'pendaftar'), data);
+                alert('Berhasil login dengan Google! Data terkirim.');
+            } catch (error) {
+                alert('Gagal login dengan Google: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
